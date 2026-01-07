@@ -40,13 +40,16 @@
 
 
 ```bash
-# 1. Клонирование репозитория
+# 1. Установка Docker
+https://www.docker.com/products/docker-desktop/
+
+# 2. Клонирование репозитория
 git clone https://github.com/un4g1vable/WeatherAPI_Docker.git
 cd WeatherAPI_Docker
 
-# 2. Запуск
+# 3. Запуск
 docker-compose up --build
 
-# 3. Открыть в браузере
+# 4. Открыть в браузере
 Документация: http://localhost:8000/docs
 Проверка: http://localhost:8000/health
