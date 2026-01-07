@@ -3,7 +3,7 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: weather_postgres
+    container_name: weather_postgres_s3
     environment:
       POSTGRES_USER: weather_user
       POSTGRES_PASSWORD: weather_pass
@@ -12,17 +12,23 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    command: >
+      postgres 
+      -c wal_level=replica
+      -c max_wal_senders=10
+      -c max_replication_slots=10
+      -c shared_preload_libraries='pg_stat_statements'
+      -c pg_stat_statements.track=all
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U weather_user -d weather_db"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - weather_network
 
   app:
     build: .
-    container_name: weather_api
+    container_name: weather_api_s3
     ports:
       - "8000:8000"
     environment:
@@ -31,15 +37,20 @@ services:
       DB_NAME: weather_db
       DB_USER: weather_user
       DB_PASSWORD: weather_pass
+      PARSER_INTERVAL: "600"
+      DEFAULT_CITY: "ekaterinburg"
+      ARCHIVE_AFTER_DAYS: "30"
+      BACKUP_INTERVAL_HOURS: "24"
+      BACKUP_RETENTION_DAYS: "90"
+      BACKUP_DIR: "/app/backups"
+      STATS_UPDATE_INTERVAL: "3600"
+      CLEANUP_INTERVAL: "86400"
+    volumes:
+      - ./backups:/app/backups
     depends_on:
       postgres:
         condition: service_healthy
-    networks:
-      - weather_network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
-
-networks:
-  weather_network:
-    driver: bridge
