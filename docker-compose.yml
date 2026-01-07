@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: weather_postgres
+    environment:
+      POSTGRES_USER: weather_user
+      POSTGRES_PASSWORD: weather_pass
+      POSTGRES_DB: weather_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U weather_user -d weather_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - weather_network
+
+  app:
+    build: .
+    container_name: weather_api
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: weather_db
+      DB_USER: weather_user
+      DB_PASSWORD: weather_pass
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - weather_network
+
+volumes:
+  postgres_data:
+
+networks:
+  weather_network:
+    driver: bridge
